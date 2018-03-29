@@ -1,62 +1,51 @@
-/*
-
-#include <dlib\opencv.h>
-#include <opencv2\highgui\highgui.hpp>
-#include <dlib\image_processing\frontal_face_detector.h>
-#include <dlib\image_processing\render_face_detections.h>
-#include <dlib\image_processing.h>
 #include <dlib\gui_widgets.h>
+#include <dlib\image_processing.h>
+#include <dlib\opencv.h>
+#include <opencv\cv.hpp>
+#include <iostream>
+#include <fstream>
 
 
 
-using namespace cv;
 using namespace dlib;
+using namespace cv;
 using namespace std;
 
-int main(int argc, char** argv) {
+int main() {
+	try {
+		image_window win;
+		Mat frame;
+		VideoCapture capture("38335774.mp4");
+		if (!capture.isOpened()) {
+			return -1;
+		}
 
-try {
-VideoCapture cap(0);
-if (!cap.isOpened()) {
-return -1;
+		typedef scan_fhog_pyramid<pyramid_down<2>> image_scanner_type;
+		object_detector<image_scanner_type> detector;
+		deserialize("S:\\VS_Projects\\C-Project\\Car_Vision\\x64\\Release\\car_detector.svm") >> detector;
+
+		while (!win.is_closed()) {
+			capture >> frame;
+			resize(frame, frame, Size(960, 540));
+
+			cv_image<bgr_pixel> cimag(frame);
+			std::vector<dlib::rectangle> rects = detector(cimag);
+
+			cout << "Num Detections: " << rects.size() << endl;
+
+			win.clear_overlay();
+			win.set_image(cimag);
+			win.add_overlay(rects, rgb_pixel(255, 0, 0));
+
+			cout << "Hit enter to see the next image.";
+			cin.get();
+		}
+	}
+
+	catch (exception& e) {
+		cout << "\n exception thrown!" << endl;
+		cout << e.what() << endl;
+	}
+
+	return EXIT_SUCCESS;
 }
-
-image_window win;
-frontal_face_detector detector = get_frontal_face_detector();
-shape_predictor pose_model;
-deserialize("S:\\dlib-19.9\\models\\mmod_front_and_rear_end_vehicle_detector.dat") >> pose_model;
-
-while (!win.is_closed()) {
-Mat temp;
-if (!cap.read(temp)) {
-break;
-}
-
-cv_image<bgr_pixel> cimg(temp);
-std::vector<rectangle> face = detector(cimg);
-std::vector<full_object_detection> shapes;
-for (unsigned long i = 0; i < face.size(); ++i) {
-shapes.push_back(pose_model(cimg, face[i]));
-}
-
-win.clear_overlay();
-win.set_image(cimg);
-win.add_overlay(render_face_detections(shapes));
-}
-}
-catch (serialization_error& e) {
-cout << "You need dlib's default face landmarking model file to run this example." << endl;
-cout << "You can get it from the following URL: " << endl;
-cout << "   http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2" << endl;
-cout << endl << e.what() << endl;
-}
-catch (exception& e) {
-cout << e.what() << endl;
-}
-
-}
-
-
-
-
-*/
